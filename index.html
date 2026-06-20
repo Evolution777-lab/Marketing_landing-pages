@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>РТС-тендер | AI Промпт-конструктор</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --surface-muted: #f1f4f8;
+      --text: #172033;
+      --muted: #617086;
+      --border: #dce3ec;
+      --accent: #1a2e4a;
+      --accent-hover: #2d5a8e;
+      --danger: #b42318;
+      --shadow: 0 10px 28px rgba(26, 46, 74, 0.08);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: var(--bg);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: var(--accent-hover);
+      text-decoration: underline;
+    }
+
+    .app-header {
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .header-inner,
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 72px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.01em;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .page {
+      padding: 32px 0 56px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .tab-button {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 12px 18px;
+      color: var(--accent);
+      background: var(--surface);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    }
+
+    .tab-button:hover,
+    .tab-button:focus-visible {
+      border-color: var(--accent-hover);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .tab-button.active {
+      color: #ffffff;
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .hero-card,
+    .form-card,
+    .result-card {
+      border: 1px solid rgba(220, 227, 236, 0.9);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: clamp(26px, 4vw, 40px);
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(340px, 0.85fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .form-card,
+    .result-card {
+      padding: 24px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .section-title h2,
+    .step h3 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 20px;
+      line-height: 1.3;
+    }
+
+    .step h3 {
+      font-size: 18px;
+    }
+
+    .competitor-card,
+    .step,
+    .context-note {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fbfcfe;
+      padding: 18px;
+    }
+
+    .competitor-card + .competitor-card,
+    .step + .step {
+      margin-top: 16px;
+    }
+
+    .competitor-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    label,
+    legend {
+      color: #25344d;
+      font-weight: 700;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 13px;
+      color: var(--text);
+      background: #ffffff;
+      font: inherit;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    textarea {
+      min-height: 128px;
+      resize: vertical;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: var(--accent-hover);
+      box-shadow: 0 0 0 4px rgba(45, 90, 142, 0.12);
+      outline: none;
+    }
+
+    .choice-group {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .choice {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #ffffff;
+      cursor: pointer;
+    }
+
+    .choice input {
+      flex: 0 0 auto;
+      margin-top: 4px;
+      accent-color: var(--accent);
+    }
+
+    .choice strong {
+      display: block;
+      color: var(--text);
+    }
+
+    .choice span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .inline-check {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 18px 0;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .inline-check input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 18px;
+      color: #ffffff;
+      background: var(--accent);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .btn:hover,
+    .btn:focus-visible {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(26, 46, 74, 0.14);
+      outline: none;
+    }
+
+    .btn.full {
+      width: 100%;
+    }
+
+    .btn.secondary {
+      color: var(--accent);
+      border: 1px solid var(--border);
+      background: #ffffff;
+      box-shadow: none;
+    }
+
+    .btn.secondary:hover,
+    .btn.secondary:focus-visible {
+      color: #ffffff;
+      border-color: var(--accent-hover);
+      background: var(--accent-hover);
+    }
+
+    .btn.danger {
+      color: var(--danger);
+      border: 1px solid rgba(180, 35, 24, 0.25);
+      background: #fff7f6;
+      box-shadow: none;
+      padding: 8px 11px;
+      font-size: 14px;
+    }
+
+    .btn.danger:hover,
+    .btn.danger:focus-visible {
+      color: #ffffff;
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .result-card {
+      position: sticky;
+      top: 20px;
+    }
+
+    .result-card h2 {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: 20px;
+    }
+
+    .prompt-output {
+      min-height: 320px;
+      max-height: 620px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      color: #1e293b;
+      background: #eef2f6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .hint {
+      margin: 12px 0 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-weight: 700;
+    }
+
+    .links a {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 11px;
+      background: #ffffff;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .error {
+      display: none;
+      margin: 0 0 14px;
+      border: 1px solid rgba(180, 35, 24, 0.24);
+      border-radius: 10px;
+      padding: 11px 13px;
+      color: var(--danger);
+      background: #fff7f6;
+      font-weight: 700;
+    }
+
+    .context-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .context-note strong {
+      color: var(--accent);
+    }
+
+    @media (max-width: 920px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-card {
+        position: static;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .header-inner,
+      .page {
+        width: min(100% - 20px, 1180px);
+      }
+
+      .hero-card,
+      .form-card,
+      .result-card {
+        padding: 18px;
+      }
+
+      .tab-button,
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        РТС-тендер | AI Промпт-конструктор
+        <span>Маркетинговая команда</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <nav class="tabs" aria-label="Разделы приложения">
+      <button class="tab-button active" type="button" data-tab="competitors">🔍 Анализ конкурентов</button>
+      <button class="tab-button" type="button" data-tab="material">✏️ Создать материал</button>
+    </nav>
+
+    <section class="tab-panel active" id="tab-competitors" aria-labelledby="competitors-title">
+      <div class="hero-card">
+        <h1 id="competitors-title">Анализ лендингов конкурентов</h1>
+        <p class="subtitle">Заполните форму → скопируйте готовый промпт → вставьте в AI</p>
+      </div>
+
+      <div class="grid">
+        <form class="form-card" id="competitor-form">
+          <div class="section-title">
+            <h2>Лендинги для анализа</h2>
+            <button class="btn secondary" type="button" id="add-competitor">+ Добавить конкурента</button>
+          </div>
+          <p class="error" id="competitor-error"></p>
+          <div id="competitor-list"></div>
+
+          <label class="inline-check" for="compare-own">
+            <input id="compare-own" type="checkbox">
+            Сравнить с нашим лендингом РТС-тендер
+          </label>
+
+          <div class="field hidden" id="own-landing-field">
+            <label for="own-landing-text">Текст нашего лендинга</label>
+            <textarea id="own-landing-text" rows="5" placeholder="Вставьте текст лендинга РТС-тендер..."></textarea>
+          </div>
+
+          <button class="btn full" type="submit">Сгенерировать промпт →</button>
+        </form>
+
+        <aside class="result-card" aria-live="polite">
+          <h2>Готовый промпт</h2>
+          <pre class="prompt-output empty-state" id="competitor-output">Здесь появится промпт после заполнения формы.</pre>
+          <div class="button-row">
+            <button class="btn" type="button" data-copy-target="competitor-output">📋 Скопировать промпт</button>
+          </div>
+          <p class="hint">Вставьте промпт в Perplexity, Claude или ChatGPT</p>
+          <div class="links" aria-label="AI-сервисы">
+            <a href="https://www.perplexity.ai/" target="_blank" rel="noopener noreferrer">perplexity.ai</a>
+            <a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">claude.ai</a>
+            <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">chatgpt.com</a>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="tab-material" aria-labelledby="material-title">
+      <div class="hero-card">
+        <h1 id="material-title">Конструктор рекламного материала</h1>
+        <p class="subtitle">Выберите параметры → скопируйте промпт → вставьте в AI</p>
+      </div>
+
+      <div class="grid">
+        <form class="form-card" id="material-form">
+          <p class="error" id="material-error"></p>
+
+          <fieldset class="step">
+            <legend><h3>Шаг 1 — Что должен сделать посетитель лендинга?</h3></legend>
+            <div class="choice-group">
+              <label class="choice">
+                <input type="radio" name="goal" value="registration" checked>
+                <span>
+                  <strong>Зарегистрироваться как поставщик</strong>
+                  <span>Подходит для конверсионного лендинга с фокусом на заявку/регистрацию.</span>
+                </span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="goal" value="product">
+                <span>
+                  <strong>Узнать о конкретном продукте или функции</strong>
+                  <span>Подходит для продуктового лендинга с объяснением ценности и сценариев.</span>
+                </span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="goal" value="webinar">
+                <span>
+                  <strong>Записаться на вебинар</strong>
+                  <span>Подходит для событийного лендинга с программой и регистрацией.</span>
+                </span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="goal" value="other">
+                <span>
+                  <strong>Другое</strong>
+                  <span>Укажите конкретное целевое действие.</span>
+                </span>
+              </label>
+            </div>
+            <div class="field hidden" id="other-goal-field" style="margin-top: 12px;">
+              <label for="other-goal">Другое целевое действие</label>
+              <input id="other-goal" type="text" placeholder="например, скачать чек-лист по участию в закупках">
+            </div>
+          </fieldset>
+
+          <fieldset class="step">
+            <legend><h3>Шаг 2 — Кому адресован лендинг?</h3></legend>
+            <div class="choice-group" id="audience-options"></div>
+          </fieldset>
+
+          <fieldset class="step">
+            <legend><h3>Шаг 3 — О каком продукте РТС-тендер?</h3></legend>
+            <div class="choice-group product-grid">
+              <label class="choice">
+                <input type="checkbox" name="product" value="44-ФЗ">
+                <span><strong>44-ФЗ</strong><span>Государственные закупки для поставщиков.</span></span>
+              </label>
+              <label class="choice">
+                <input type="checkbox" name="product" value="223-ФЗ">
+                <span><strong>223-ФЗ</strong><span>Закупки компаний с государственным участием.</span></span>
+              </label>
+              <label class="choice">
+                <input type="checkbox" name="product" value="РТС-маркет">
+                <span><strong>РТС-маркет</strong><span>Быстрые продажи через электронный магазин.</span></span>
+              </label>
+              <label class="choice">
+                <input type="checkbox" name="product" value="коммерческие закупки">
+                <span><strong>Коммерческие закупки</strong><span>Торги и закупки бизнеса вне 44-ФЗ/223-ФЗ.</span></span>
+              </label>
+              <label class="choice">
+                <input type="checkbox" name="product" value="все" id="all-products">
+                <span><strong>Все</strong><span>Сделать материал про возможности площадки в целом.</span></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="context-note">
+            <strong>Встроенный контекст:</strong> профили целевой аудитории, шаблоны структуры лендингов и рыночные практики автоматически попадут в промпт.
+          </div>
+
+          <button class="btn full" type="submit" style="margin-top: 18px;">Сгенерировать промпт →</button>
+        </form>
+
+        <aside class="result-card" aria-live="polite">
+          <h2>Готовый промпт</h2>
+          <pre class="prompt-output empty-state" id="material-output">Здесь появится промпт после выбора параметров.</pre>
+          <div class="button-row">
+            <button class="btn" type="button" data-copy-target="material-output">📋 Скопировать промпт</button>
+          </div>
+          <p class="hint">Вставьте промпт в Perplexity, Claude или ChatGPT</p>
+          <div class="links" aria-label="AI-сервисы">
+            <a href="https://www.perplexity.ai/" target="_blank" rel="noopener noreferrer">perplexity.ai</a>
+            <a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">claude.ai</a>
+            <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">chatgpt.com</a>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <template id="competitor-template">
+    <article class="competitor-card">
+      <div class="competitor-heading">
+        <span class="competitor-title"></span>
+        <button class="btn danger remove-competitor" type="button">Удалить</button>
+      </div>
+      <div class="field">
+        <label>Название конкурента</label>
+        <input class="competitor-name" type="text" placeholder="например, Сбербанк-АСТ">
+      </div>
+      <div class="field">
+        <label>Текст лендинга</label>
+        <textarea class="competitor-text" rows="5" placeholder="Вставьте скопированный текст страницы..."></textarea>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    const MAX_COMPETITORS = 5;
+
+    const audienceProfiles = [
+      {
+        id: "small-business",
+        title: "Поставщик — малый бизнес",
+        short: "Ищет понятный вход в закупки без лишней бюрократии и риска ошибок.",
+        pains: [
+          "сложно разобраться в правилах 44-ФЗ и 223-ФЗ",
+          "нет времени мониторить десятки площадок",
+          "страшно ошибиться в заявке и потерять обеспечение",
+          "нужно быстро найти первые релевантные закупки"
+        ],
+        objections: [
+          "регистрация и участие займут слишком много времени",
+          "тендеры выигрывают только крупные игроки",
+          "в документации легко допустить ошибку"
+        ],
+        triggers: [
+          "простые первые шаги",
+          "понятная инструкция",
+          "экономия времени",
+          "примеры выигранных контрактов"
+        ],
+        message: "Покажи, что участие в закупках может быть понятным и управляемым даже для небольшой команды."
+      },
+      {
+        id: "large-company",
+        title: "Поставщик — крупная компания",
+        short: "Нужны масштаб, контроль процессов, надежность площадки и прозрачная работа команды.",
+        pains: [
+          "много закупочных направлений и ответственных сотрудников",
+          "нужно контролировать статусы, сроки и документы",
+          "важны надежность площадки и юридическая корректность",
+          "требуется прогнозируемый поток крупных закупок"
+        ],
+        objections: [
+          "переход на новый процесс может усложнить работу",
+          "непонятно, как контролировать эффективность участия",
+          "важна совместимость с внутренними регламентами"
+        ],
+        triggers: [
+          "масштаб площадки",
+          "цифры по поставщикам и контрактам",
+          "контроль и аналитика",
+          "экспертность и поддержка"
+        ],
+        message: "Подчеркни надежность, масштаб, контроль и снижение операционных рисков."
+      },
+      {
+        id: "new-tender-participant",
+        title: "Новый участник тендеров",
+        short: "Еще не участвовал или участвовал мало; ему нужны обучение, уверенность и безопасный старт.",
+        pains: [
+          "непонятно, с чего начать участие в закупках",
+          "много терминов, регламентов и документов",
+          "сложно оценить свои шансы на победу",
+          "нужна помощь на первых этапах"
+        ],
+        objections: [
+          "я не готов к тендерам",
+          "это слишком сложно и долго",
+          "без опыта невозможно выиграть"
+        ],
+        triggers: [
+          "пошаговый путь",
+          "обучающие материалы",
+          "первый понятный результат",
+          "поддержка экспертов"
+        ],
+        message: "Сними страх первого шага и покажи маршрут от регистрации до первой заявки."
+      }
+    ];
+
+    const landingTemplates = {
+      conversion: {
+        title: "Конверсионный",
+        goal: "регистрация",
+        structure: "Hero → Боль → Решение → Доказательства (цифры/факты) → Финальный CTA"
+      },
+      product: {
+        title: "Продуктовый",
+        goal: "объяснить продукт",
+        structure: "Hero → Как это работает (3 шага) → Преимущества → FAQ → CTA"
+      },
+      event: {
+        title: "Событийный",
+        goal: "вебинар/мероприятие",
+        structure: "Hero → Что получишь → Программа → Спикеры → Регистрация"
+      }
+    };
+
+    const marketPractices = [
+      "Заголовок должен содержать конкретную цифру или факт",
+      "CTA отражает конкретный следующий шаг (например, «Подать первую заявку» вместо «Начать»)",
+      "Боль формулируется языком клиента, не компании",
+      "Социальное доказательство: количество поставщиков, сумма выигранных контрактов",
+      "Подзаголовок снимает главное возражение сегмента"
+    ];
+
+    const tabs = document.querySelectorAll(".tab-button");
+    const panels = {
+      competitors: document.querySelector("#tab-competitors"),
+      material: document.querySelector("#tab-material")
+    };
+
+    const competitorList = document.querySelector("#competitor-list");
+    const competitorTemplate = document.querySelector("#competitor-template");
+    const addCompetitorButton = document.querySelector("#add-competitor");
+    const compareOwnCheckbox = document.querySelector("#compare-own");
+    const ownLandingField = document.querySelector("#own-landing-field");
+    const competitorForm = document.querySelector("#competitor-form");
+    const competitorOutput = document.querySelector("#competitor-output");
+    const competitorError = document.querySelector("#competitor-error");
+
+    const audienceOptions = document.querySelector("#audience-options");
+    const materialForm = document.querySelector("#material-form");
+    const materialOutput = document.querySelector("#material-output");
+    const materialError = document.querySelector("#material-error");
+    const otherGoalField = document.querySelector("#other-goal-field");
+    const otherGoalInput = document.querySelector("#other-goal");
+    const allProductsCheckbox = document.querySelector("#all-products");
+
+    function setActiveTab(tabName) {
+      tabs.forEach((tab) => {
+        const isActive = tab.dataset.tab === tabName;
+        tab.classList.toggle("active", isActive);
+        tab.setAttribute("aria-selected", String(isActive));
+      });
+
+      Object.entries(panels).forEach(([name, panel]) => {
+        panel.classList.toggle("active", name === tabName);
+      });
+    }
+
+    function showError(element, message) {
+      element.textContent = message;
+      element.style.display = "block";
+    }
+
+    function clearError(element) {
+      element.textContent = "";
+      element.style.display = "none";
+    }
+
+    function setPrompt(outputElement, prompt) {
+      outputElement.textContent = prompt;
+      outputElement.classList.remove("empty-state");
+    }
+
+    function addCompetitor() {
+      const currentCount = competitorList.children.length;
+      if (currentCount >= MAX_COMPETITORS) {
+        return;
+      }
+
+      const fragment = competitorTemplate.content.cloneNode(true);
+      competitorList.appendChild(fragment);
+      updateCompetitorCards();
+    }
+
+    function updateCompetitorCards() {
+      const cards = Array.from(competitorList.querySelectorAll(".competitor-card"));
+
+      cards.forEach((card, index) => {
+        card.querySelector(".competitor-title").textContent = `Конкурент ${index + 1}`;
+        const removeButton = card.querySelector(".remove-competitor");
+        removeButton.classList.toggle("hidden", cards.length === 1);
+        removeButton.onclick = () => {
+          card.remove();
+          updateCompetitorCards();
+        };
+      });
+
+      addCompetitorButton.disabled = cards.length >= MAX_COMPETITORS;
+      addCompetitorButton.textContent = cards.length >= MAX_COMPETITORS
+        ? "Максимум 5 конкурентов"
+        : "+ Добавить конкурента";
+    }
+
+    function getCompetitorData() {
+      return Array.from(competitorList.querySelectorAll(".competitor-card")).map((card, index) => {
+        const rawName = card.querySelector(".competitor-name").value.trim();
+        const name = rawName || `Конкурент ${index + 1}`;
+        const text = card.querySelector(".competitor-text").value.trim();
+
+        return { name, text, hasInput: Boolean(rawName || text) };
+      }).filter((item) => item.hasInput);
+    }
+
+    function buildCompetitorPrompt(competitors, ownLandingText) {
+      const competitorBlocks = competitors.map((competitor, index) => {
+        return `[КОНКУРЕНТ ${index + 1}: ${competitor.name}]\n${competitor.text || "[текст лендинга не указан]"}`;
+      }).join("\n\n");
+
+      const ownLandingBlock = ownLandingText
+        ? `\n\nНаш лендинг — РТС-тендер:\n${ownLandingText}`
+        : "";
+
+      const recommendationBlock = ownLandingText
+        ? "\n\nПосле таблицы добавь раздел \"Выводы и рекомендации для РТС-тендер\" —\n5 конкретных улучшений нашего лендинга на основе анализа конкурентов."
+        : "";
+
+      return `Ты — эксперт по B2B-маркетингу и электронным торговым площадкам.
+
+Контекст: РТС-тендер — электронная торговая площадка для госзакупок (44-ФЗ и 223-ФЗ).
+Целевая аудитория РТС-тендер: поставщики — малый бизнес, крупные компании, новые участники тендеров.
+
+Рыночные практики для оценки лендингов:
+— Сильный заголовок содержит конкретную цифру или факт
+— CTA отражает конкретный следующий шаг клиента
+— Боль формулируется языком клиента, не компании
+— Эффективное социальное доказательство: количество пользователей, суммы контрактов
+
+Проанализируй следующие лендинги:
+
+${competitorBlocks}${ownLandingBlock}
+
+Составь сравнительную таблицу. Для каждого лендинга определи:
+1. Главный заголовок (дословно)
+2. Целевой сегмент аудитории
+3. Ключевая боль клиента (как сформулирована)
+4. УТП
+5. Текст главной CTA-кнопки
+6. Tone of voice (деловой / дружелюбный / экспертный / давящий)
+7. Сильные стороны (2-3 пункта)
+8. Слабые стороны (2-3 пункта)${recommendationBlock}
+
+Отвечай на русском языке.`;
+    }
+
+    function renderAudienceOptions() {
+      audienceOptions.innerHTML = audienceProfiles.map((profile, index) => {
+        return `
+          <label class="choice">
+            <input type="radio" name="audience" value="${profile.id}" ${index === 0 ? "checked" : ""}>
+            <span>
+              <strong>${profile.title}</strong>
+              <span>${profile.short}</span>
+            </span>
+          </label>
+        `;
+      }).join("");
+    }
+
+    function getSelectedAudience() {
+      const selected = materialForm.querySelector('input[name="audience"]:checked');
+      return audienceProfiles.find((profile) => profile.id === selected.value);
+    }
+
+    function getGoalLabel() {
+      const selectedGoal = materialForm.querySelector('input[name="goal"]:checked').value;
+
+      if (selectedGoal === "registration") {
+        return {
+          value: "Зарегистрироваться как поставщик",
+          template: landingTemplates.conversion
+        };
+      }
+
+      if (selectedGoal === "product") {
+        return {
+          value: "Узнать о конкретном продукте или функции",
+          template: landingTemplates.product
+        };
+      }
+
+      if (selectedGoal === "webinar") {
+        return {
+          value: "Записаться на вебинар",
+          template: landingTemplates.event
+        };
+      }
+
+      return {
+        value: otherGoalInput.value.trim(),
+        template: null
+      };
+    }
+
+    function getSelectedProducts() {
+      const checkedProducts = Array.from(materialForm.querySelectorAll('input[name="product"]:checked'));
+      return checkedProducts.map((input) => input.value);
+    }
+
+    function buildAudienceContext(profile) {
+      return `Профиль ЦА: ${profile.title}
+Краткое описание: ${profile.short}
+Ключевые боли:
+${profile.pains.map((pain) => `— ${pain}`).join("\n")}
+Главные возражения:
+${profile.objections.map((objection) => `— ${objection}`).join("\n")}
+Триггеры доверия и интереса:
+${profile.triggers.map((trigger) => `— ${trigger}`).join("\n")}
+Коммуникационный акцент: ${profile.message}`;
+    }
+
+    function buildTemplatesContext(selectedTemplate) {
+      if (selectedTemplate) {
+        return `Используй шаблон структуры лендинга: ${selectedTemplate.title} (цель — ${selectedTemplate.goal})
+Структура: ${selectedTemplate.structure}`;
+      }
+
+      return `Выбери наиболее подходящий шаблон структуры лендинга под указанную цель:
+— ${landingTemplates.conversion.title} (цель — ${landingTemplates.conversion.goal}): ${landingTemplates.conversion.structure}
+— ${landingTemplates.product.title} (цель — ${landingTemplates.product.goal}): ${landingTemplates.product.structure}
+— ${landingTemplates.event.title} (цель — ${landingTemplates.event.goal}): ${landingTemplates.event.structure}`;
+    }
+
+    function buildMaterialPrompt(goal, audience, products) {
+      const productLine = products.includes("все")
+        ? "все ключевые продукты и возможности РТС-тендер"
+        : products.join(", ");
+
+      return `Ты — эксперт по B2B-маркетингу, performance-копирайтингу и электронным торговым площадкам.
+
+Контекст компании:
+РТС-тендер — электронная торговая площадка для госзакупок и закупок бизнеса. Основные направления: 44-ФЗ, 223-ФЗ, РТС-маркет, коммерческие закупки. Аудитория: поставщики — малый бизнес, крупные компании, новые участники тендеров.
+
+Задача:
+Создай структуру и текст рекламного лендинга на русском языке.
+
+Целевое действие посетителя:
+${goal.value}
+
+Продукт / направление РТС-тендер:
+${productLine}
+
+${buildAudienceContext(audience)}
+
+${buildTemplatesContext(goal.template)}
+
+Рыночные практики, которые нужно учесть:
+${marketPractices.map((practice) => `— ${practice}`).join("\n")}
+
+Требования к результату:
+1. Предложи 3 варианта Hero-блока: заголовок, подзаголовок, CTA.
+2. Основной заголовок должен содержать конкретную цифру или проверяемый факт. Если точных данных нет, укажи, какие данные нужно подставить.
+3. Подзаголовок должен снимать главное возражение сегмента.
+4. Для каждого смыслового блока лендинга напиши: цель блока, ключевой тезис, черновой текст.
+5. Сформулируй боль языком клиента, без внутреннего жаргона компании.
+6. Добавь блок социального доказательства: какие цифры нужны и как их лучше подать.
+7. Предложи 5 вариантов CTA с конкретным следующим шагом.
+8. Добавь короткий FAQ из 5 вопросов, если он уместен для выбранной структуры.
+9. В конце дай чек-лист проверки лендинга перед запуском.
+
+Tone of voice: деловой, экспертный, уверенный, без давления и завышенных обещаний.
+Отвечай на русском языке.`;
+    }
+
+    function copyPrompt(button, targetId) {
+      const target = document.querySelector(`#${targetId}`);
+      const text = target.textContent.trim();
+
+      if (!text || target.classList.contains("empty-state")) {
+        return;
+      }
+
+      const showCopiedState = () => {
+        const originalText = button.textContent;
+        button.textContent = "✅ Скопировано!";
+        window.setTimeout(() => {
+          button.textContent = originalText;
+        }, 2000);
+      };
+
+      const fallbackSelect = () => {
+        const range = document.createRange();
+        range.selectNodeContents(target);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      };
+
+      if (!navigator.clipboard || !navigator.clipboard.writeText) {
+        fallbackSelect();
+        return;
+      }
+
+      navigator.clipboard.writeText(text).then(showCopiedState).catch(fallbackSelect);
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => setActiveTab(tab.dataset.tab));
+    });
+
+    addCompetitorButton.addEventListener("click", addCompetitor);
+
+    compareOwnCheckbox.addEventListener("change", () => {
+      ownLandingField.classList.toggle("hidden", !compareOwnCheckbox.checked);
+    });
+
+    competitorForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      clearError(competitorError);
+
+      const competitors = getCompetitorData();
+      const hasLandingText = competitors.some((competitor) => competitor.text);
+
+      if (!hasLandingText) {
+        showError(competitorError, "Добавьте текст хотя бы одного лендинга конкурента.");
+        return;
+      }
+
+      const ownLandingText = compareOwnCheckbox.checked
+        ? document.querySelector("#own-landing-text").value.trim()
+        : "";
+
+      if (compareOwnCheckbox.checked && !ownLandingText) {
+        showError(competitorError, "Вставьте текст нашего лендинга или снимите чекбокс сравнения.");
+        return;
+      }
+
+      setPrompt(competitorOutput, buildCompetitorPrompt(competitors, ownLandingText));
+    });
+
+    materialForm.addEventListener("change", (event) => {
+      if (event.target.name === "goal") {
+        const isOther = event.target.value === "other";
+        otherGoalField.classList.toggle("hidden", !isOther);
+        if (isOther) {
+          otherGoalInput.focus();
+        }
+      }
+
+      if (event.target.name === "product") {
+        const productInputs = Array.from(materialForm.querySelectorAll('input[name="product"]'));
+
+        if (event.target === allProductsCheckbox && allProductsCheckbox.checked) {
+          productInputs.forEach((input) => {
+            if (input !== allProductsCheckbox) {
+              input.checked = false;
+            }
+          });
+        } else if (event.target !== allProductsCheckbox && event.target.checked) {
+          allProductsCheckbox.checked = false;
+        }
+      }
+    });
+
+    materialForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      clearError(materialError);
+
+      const goal = getGoalLabel();
+      const products = getSelectedProducts();
+
+      if (!goal.value) {
+        showError(materialError, "Укажите целевое действие для варианта «Другое».");
+        return;
+      }
+
+      if (!products.length) {
+        showError(materialError, "Выберите хотя бы один продукт или вариант «Все».");
+        return;
+      }
+
+      setPrompt(materialOutput, buildMaterialPrompt(goal, getSelectedAudience(), products));
+    });
+
+    document.querySelectorAll("[data-copy-target]").forEach((button) => {
+      button.addEventListener("click", () => copyPrompt(button, button.dataset.copyTarget));
+    });
+
+    renderAudienceOptions();
+    addCompetitor();
+  </script>
+</body>
+</html>
