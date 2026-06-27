@@ -1,0 +1,8 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+SQLAlchemy==2.0.36
+imap-tools==1.7.4
+openai==1.59.6
+APScheduler==3.11.0
+python-dotenv==1.0.1
+pydantic==2.10.4
