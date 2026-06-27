@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Competitor Intelligence Hub</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-alt: #11161d;
+      --surface: #161c24;
+      --surface-2: #1c232d;
+      --border: #283039;
+      --text: #e6edf3;
+      --muted: #8b97a6;
+      --muted-2: #5c6773;
+      --accent: #2f81f7;
+      --accent-soft: rgba(47,129,247,0.15);
+      --teal: #17b8a6;
+      --teal-soft: rgba(23,184,166,0.12);
+      --federal: #f85149;
+      --commercial: #f0883e;
+      --western: #388bfd;
+      --unknown: #6e7681;
+      --critical: #ff4d4f;
+      --high: #f85149;
+      --medium: #e3b341;
+      --low: #6e7681;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+      display: flex;
+      min-height: 100vh;
+    }
+    a { color: var(--accent); }
+
+    /* ---------- Sidebar ---------- */
+    .sidebar {
+      width: 230px;
+      background: var(--bg-alt);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 16px 12px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      flex-shrink: 0;
+    }
+    .brand {
+      font-weight: 700;
+      font-size: 15px;
+      padding: 8px 10px 16px;
+      letter-spacing: .3px;
+      line-height: 1.3;
+    }
+    .brand small { display:block; color: var(--muted); font-weight:400; font-size:11px; margin-top:2px;}
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 500;
+      margin-bottom: 4px;
+      user-select: none;
+      transition: background .15s, color .15s;
+    }
+    .nav-item:hover { background: var(--surface); color: var(--text); }
+    .nav-item.active { background: var(--accent-soft); color: var(--text); }
+    .nav-item .badge {
+      background: var(--high);
+      color: #fff;
+      border-radius: 20px;
+      font-size: 11px;
+      padding: 1px 8px;
+      font-weight: 700;
+      min-width: 20px;
+      text-align: center;
+    }
+    .nav-item .badge.zero { display:none; }
+    .sidebar-foot { margin-top:auto; color: var(--muted-2); font-size: 11px; padding: 10px; }
+
+    /* ---------- Main ---------- */
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      display:flex; align-items:center; gap:12px;
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-alt);
+      position: sticky; top:0; z-index: 20;
+    }
+    .topbar h1 { font-size: 17px; margin:0; flex:1; }
+    .menu-toggle { display:none; background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:6px 10px; cursor:pointer; }
+    .content { padding: 20px 22px 60px; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* KPI cards */
+    .kpis { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+    .kpi {
+      background: var(--surface); border:1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px; min-width: 150px; flex:1;
+    }
+    .kpi .num { font-size: 26px; font-weight: 700; }
+    .kpi .lbl { color: var(--muted); font-size: 12px; margin-top:2px; }
+
+    /* Buttons / inputs */
+    button.btn, .btn {
+      background: var(--accent); color:#fff; border:none; border-radius:8px;
+      padding: 9px 14px; cursor:pointer; font-weight:600; font-size:13px;
+    }
+    button.btn:hover { filter: brightness(1.1); }
+    button.btn.ghost { background: var(--surface-2); color: var(--text); border:1px solid var(--border); }
+    button.btn.small { padding:6px 10px; font-size:12px; }
+    button.btn:disabled { opacity:.5; cursor: default; }
+    input, select, textarea {
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+      font-size: 13px; outline:none; font-family: inherit;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    label.fld { display:flex; flex-direction:column; gap:6px; font-size:12px; color: var(--muted); }
+
+    /* Filters */
+    .filters {
+      display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;
+      background: var(--surface); border:1px solid var(--border);
+      border-radius: var(--radius); padding: 14px; margin-bottom:16px;
+    }
+    .filters .fld { min-width: 130px; }
+    .filters .grow { flex:1; min-width: 180px; }
+
+    /* Email cards */
+    .cards { display:flex; flex-direction:column; gap:12px; }
+    .card {
+      background: var(--surface); border:1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      display:flex; gap:14px; align-items:flex-start;
+    }
+    .card.is-critical { border-color: rgba(255,77,79,.5); }
+    .avatar {
+      width: 42px; height:42px; border-radius: 10px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700; color:#fff; font-size: 15px;
+    }
+    .card-body { flex:1; min-width:0; }
+    .card-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .card-subject { font-weight: 600; font-size: 14.5px; margin:0; flex:1; min-width:160px; }
+    .card-summary { color: var(--muted); margin: 6px 0 8px; line-height:1.45; }
+    .card-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; color: var(--muted-2); }
+    .card-actions { display:flex; gap:6px; flex-shrink:0; }
+    .icon-btn { background:transparent; border:1px solid var(--border); color: var(--muted); border-radius:8px; cursor:pointer; padding:5px 8px; font-size:14px; }
+    .icon-btn.active { color:#e3b341; border-color:#e3b341; }
+
+    /* badges */
+    .badge-pill { font-size: 11px; font-weight:600; padding: 2px 9px; border-radius: 20px; white-space:nowrap; }
+    .cat { background: var(--surface-2); color: var(--text); border:1px solid var(--border); }
+    .ctype-federal { background: rgba(248,81,73,.16); color: var(--federal); }
+    .ctype-commercial { background: rgba(240,136,62,.16); color: var(--commercial); }
+    .ctype-western { background: rgba(56,139,253,.16); color: var(--western); }
+    .ctype-unknown { background: rgba(110,118,129,.16); color: var(--unknown); }
+    .threat-critical { background: rgba(255,77,79,.18); color: var(--critical); animation: pulse 1.4s infinite; }
+    .threat-high { background: rgba(248,81,73,.16); color: var(--high); }
+    .threat-medium { background: rgba(227,179,65,.16); color: var(--medium); }
+    .threat-low { background: rgba(110,118,129,.16); color: var(--low); }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255,77,79,.5); }
+      70% { box-shadow: 0 0 0 8px rgba(255,77,79,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,77,79,0); }
+    }
+
+    /* importance bar */
+    .imp-wrap { display:flex; align-items:center; gap:8px; }
+    .imp-bar { width: 90px; height: 6px; border-radius: 6px; background: var(--surface-2); overflow:hidden; }
+    .imp-fill { height:100%; border-radius:6px; }
+
+    /* expand */
+    .expand { margin-top: 12px; border-top:1px solid var(--border); padding-top:12px; display:none; }
+    .expand.open { display:block; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-block { background: var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+    .field-block h4 { margin:0 0 5px; font-size:12px; color: var(--accent); text-transform:uppercase; letter-spacing:.4px; }
+    .field-block p { margin:0; line-height:1.5; white-space:pre-wrap; }
+    .reco { border-left: 3px solid var(--teal); background: var(--teal-soft); }
+    .reco h4 { color: var(--teal); }
+    .orig {
+      margin-top:12px; background: var(--bg); border:1px solid var(--border); border-radius:8px;
+    }
+    .orig summary { cursor:pointer; padding:10px 12px; color: var(--muted); font-size:12px; }
+    .orig .orig-body { padding: 0 12px 12px; white-space:pre-wrap; color: var(--muted); max-height:340px; overflow:auto; line-height:1.5; }
+    .tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .tag { background: var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:1px 8px; font-size:11px; color: var(--muted); }
+
+    /* analytics */
+    .charts-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }
+    .chart-card { background: var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+    .chart-card h3 { margin:0 0 12px; font-size:13px; color: var(--muted); font-weight:600; }
+    .chart-card canvas { max-height: 260px; }
+    .heatmap { overflow:auto; }
+    table.heat { border-collapse: collapse; width:100%; font-size:12px; }
+    table.heat th, table.heat td { border:1px solid var(--border); padding:6px 8px; text-align:center; }
+    table.heat th { color: var(--muted); font-weight:600; background: var(--surface-2); }
+    table.heat td.label { text-align:left; color: var(--text); font-weight:500; }
+
+    /* settings */
+    .settings-card { background: var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; max-width:620px; margin-bottom:16px; }
+    .settings-card h3 { margin-top:0; }
+    .hint { color: var(--medium); font-size:12px; background: rgba(227,179,65,.08); border:1px solid rgba(227,179,65,.25); border-radius:8px; padding:8px 10px; margin: 8px 0; }
+    .form-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+    .form-row .fld { flex:1; min-width:200px; }
+    .btn-row { display:flex; gap:10px; flex-wrap:wrap; }
+
+    .empty { text-align:center; color: var(--muted); padding: 50px 20px; }
+    .toast {
+      position: fixed; bottom: 22px; left:50%; transform: translateX(-50%);
+      background: var(--surface-2); border:1px solid var(--border); color: var(--text);
+      padding: 10px 18px; border-radius:10px; z-index:100; opacity:0; transition:opacity .25s;
+      box-shadow: 0 8px 30px rgba(0,0,0,.4);
+    }
+    .toast.show { opacity:1; }
+    .status-line { color: var(--muted); font-size:12px; margin-top:8px; min-height:16px; }
+
+    @media (max-width: 860px) {
+      .sidebar {
+        position: fixed; left:0; top:0; z-index:50; transform: translateX(-100%);
+        transition: transform .2s; box-shadow: 4px 0 20px rgba(0,0,0,.4);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .menu-toggle { display:block; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .grid2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">Competitor Intel Hub<small>Конкурентная разведка</small></div>
+    <div class="nav-item active" data-view="feed">📥 Лента</div>
+    <div class="nav-item" data-view="analytics">📊 Аналитика</div>
+    <div class="nav-item" data-view="threats">⚠️ Угрозы <span class="badge zero" id="threatBadge">0</span></div>
+    <div class="nav-item" data-view="settings">⚙️ Настройки</div>
+    <div class="sidebar-foot">B2G / B2B закупки<br>44-ФЗ · 223-ФЗ · 615-ПП</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <h1 id="viewTitle">Лента</h1>
+      <button class="btn ghost small" id="collectBtn">📨 Собрать сейчас</button>
+    </div>
+    <div class="content">
+
+      <!-- FEED -->
+      <section class="view active" id="view-feed">
+        <div class="kpis" id="feedKpis"></div>
+        <div class="filters">
+          <label class="fld">Категория
+            <select id="f-category"><option value="">Все</option></select>
+          </label>
+          <label class="fld">Тип конкурента
+            <select id="f-ctype">
+              <option value="">Все</option>
+              <option value="federal">Федеральные</option>
+              <option value="commercial">Коммерческие</option>
+              <option value="western">Западные</option>
+              <option value="unknown">Неизвестно</option>
+            </select>
+          </label>
+          <label class="fld">Уровень угрозы
+            <select id="f-threat">
+              <option value="">Все</option>
+              <option value="critical">Критический</option>
+              <option value="high">Высокий</option>
+              <option value="medium">Средний</option>
+              <option value="low">Низкий</option>
+            </select>
+          </label>
+          <label class="fld">Важность ≥
+            <input type="number" id="f-importance" min="0" max="100" step="5" placeholder="0" style="width:80px">
+          </label>
+          <label class="fld">С даты
+            <input type="date" id="f-from">
+          </label>
+          <label class="fld">По дату
+            <input type="date" id="f-to">
+          </label>
+          <label class="fld grow">Поиск
+            <input type="text" id="f-search" placeholder="ключевое слово, тема, отправитель…">
+          </label>
+          <button class="btn small" id="applyFilters">Применить</button>
+          <button class="btn ghost small" id="resetFilters">Сброс</button>
+          <button class="btn ghost small" id="exportCsv">⬇ CSV</button>
+        </div>
+        <div class="cards" id="feedCards"></div>
+      </section>
+
+      <!-- ANALYTICS -->
+      <section class="view" id="view-analytics">
+        <div class="kpis" id="analyticsKpis"></div>
+        <div class="charts-grid">
+          <div class="chart-card"><h3>Письма по категориям</h3><canvas id="chartCategory"></canvas></div>
+          <div class="chart-card"><h3>Объём писем за 30 дней</h3><canvas id="chartVolume"></canvas></div>
+          <div class="chart-card"><h3>Топ отправителей</h3><canvas id="chartSenders"></canvas></div>
+          <div class="chart-card"><h3>Уровень угроз по неделям</h3><canvas id="chartThreatWeek"></canvas></div>
+          <div class="chart-card"><h3>Распределение тональности</h3><canvas id="chartTone"></canvas></div>
+          <div class="chart-card"><h3>УТП конкурентов (тип × УТП)</h3><div class="heatmap" id="uspHeatmap"></div></div>
+        </div>
+      </section>
+
+      <!-- THREATS -->
+      <section class="view" id="view-threats">
+        <p style="color:var(--muted)">Только письма с высоким и критическим уровнем угрозы, отсортированы по важности.</p>
+        <div class="cards" id="threatCards"></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="view" id="view-settings">
+        <div class="settings-card">
+          <h3>Подключение к почте (IMAP)</h3>
+          <div class="hint">Используйте пароль приложения Яндекс, не основной пароль.</div>
+          <div class="form-row">
+            <label class="fld">IMAP host<input type="text" id="s-host" value="imap.yandex.ru"></label>
+            <label class="fld">Порт<input type="text" id="s-port" value="993"></label>
+          </div>
+          <div class="form-row">
+            <label class="fld">Логин (e-mail)<input type="text" id="s-username" placeholder="name@yandex.ru"></label>
+            <label class="fld">Пароль приложения<input type="password" id="s-password" placeholder="••••••••"></label>
+          </div>
+          <div class="form-row">
+            <label class="fld">Интервал опроса
+              <select id="s-interval">
+                <option value="5">Каждые 5 минут</option>
+                <option value="15">Каждые 15 минут</option>
+                <option value="30" selected>Каждые 30 минут</option>
+                <option value="60">Каждый час</option>
+                <option value="180">Каждые 3 часа</option>
+                <option value="720">Каждые 12 часов</option>
+              </select>
+            </label>
+          </div>
+          <div class="status-line" id="imapStatus"></div>
+          <div class="btn-row">
+            <button class="btn ghost" id="testImap">Проверить подключение</button>
+            <button class="btn ghost" id="collectNow2">Собрать письма сейчас</button>
+            <button class="btn ghost" id="analyzeAll">Анализировать все неразобранные</button>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>OpenAI (GPT-5.5)</h3>
+          <div class="form-row">
+            <label class="fld grow">API-ключ<input type="password" id="s-openai" placeholder="sk-…"></label>
+          </div>
+          <div class="status-line" id="openaiStatus"></div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn" id="saveSettings">Сохранить настройки</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const CTYPE_COLORS = { federal:'#f85149', commercial:'#f0883e', western:'#388bfd', unknown:'#6e7681' };
+const CTYPE_LABEL = { federal:'Федеральный', commercial:'Коммерческий', western:'Западный', unknown:'Неизвестно' };
+const THREAT_LABEL = { critical:'Критический', high:'Высокий', medium:'Средний', low:'Низкий', none:'—' };
+const CAT_LABEL = {
+  'продуктовый_анонс':'Продуктовый анонс','акция_скидка':'Акция / скидка',
+  'вебинар_мероприятие':'Вебинар / мероприятие','обучение':'Обучение',
+  'новость_платформы':'Новость платформы','тариф_прайс':'Тариф / прайс',
+  'кейс_клиента':'Кейс клиента','дайджест':'Дайджест',
+  'техническое_уведомление':'Тех. уведомление','прочее':'Прочее'
+};
+let charts = {};
+let lastFilters = {};
+
+function $(s){ return document.querySelector(s); }
+function $all(s){ return Array.from(document.querySelectorAll(s)); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
+function catLabel(c){ return CAT_LABEL[c] || c || '—'; }
+function initials(name){ if(!name) return '??'; const at=name.split('@'); const base=at[0].replace(/[^a-zа-я0-9]/gi,' ').trim(); const parts=base.split(/\s+/).filter(Boolean); if(parts.length>=2) return (parts[0][0]+parts[1][0]).toUpperCase(); return base.slice(0,2).toUpperCase()||'??'; }
+function impColor(v){ if(v>=70) return '#f85149'; if(v>=40) return '#e3b341'; return '#6e7681'; }
+function fmtDate(iso){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleString('ru-RU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
+
+/* ---------- Navigation ---------- */
+$all('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    const v=item.dataset.view;
+    $all('.nav-item').forEach(n=>n.classList.remove('active'));
+    item.classList.add('active');
+    $all('.view').forEach(s=>s.classList.remove('active'));
+    $('#view-'+v).classList.add('active');
+    $('#viewTitle').textContent = item.textContent.trim().replace(/^[^\wА-Яа-я]+/, '');
+    $('#sidebar').classList.remove('open');
+    if(v==='analytics') loadAnalytics();
+    if(v==='threats') loadThreats();
+    if(v==='settings') loadSettings();
+  });
+});
+$('#menuToggle').addEventListener('click', ()=> $('#sidebar').classList.toggle('open'));
+
+/* ---------- Feed ---------- */
+function buildFilters(){
+  const f={};
+  const cat=$('#f-category').value; if(cat) f.category=cat;
+  const ct=$('#f-ctype').value; if(ct) f.competitor_type=ct;
+  const th=$('#f-threat').value; if(th) f.threat_level=th;
+  const imp=$('#f-importance').value; if(imp) f.importance_gte=imp;
+  const from=$('#f-from').value; if(from) f.date_from=from;
+  const to=$('#f-to').value; if(to) f.date_to=to;
+  const s=$('#f-search').value.trim(); if(s) f.search=s;
+  f.archived='false';
+  return f;
+}
+function qs(obj){ return Object.entries(obj).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&'); }
+
+async function loadFeed(){
+  lastFilters = buildFilters();
+  const res = await fetch('/api/emails?'+qs(lastFilters));
+  const data = await res.json();
+  renderCards(data.emails, $('#feedCards'), true);
+  renderFeedKpis(data);
+}
+function renderFeedKpis(data){
+  const emails=data.emails||[];
+  const crit=emails.filter(e=>['high','critical'].includes(e.threat_level)).length;
+  const unan=emails.filter(e=>!e.analyzed).length;
+  $('#feedKpis').innerHTML=`
+    <div class="kpi"><div class="num">${data.total||0}</div><div class="lbl">Писем (по фильтру)</div></div>
+    <div class="kpi"><div class="num" style="color:var(--high)">${crit}</div><div class="lbl">Высокая угроза</div></div>
+    <div class="kpi"><div class="num" style="color:var(--medium)">${unan}</div><div class="lbl">Не проанализировано</div></div>`;
+}
+
+function threatBadgeHtml(t){
+  if(!t || t==='none') return '';
+  return `<span class="badge-pill threat-${t}">⚠ ${THREAT_LABEL[t]}</span>`;
+}
+
+function renderCards(emails, container, withActions){
+  if(!emails || !emails.length){ container.innerHTML='<div class="empty">Писем не найдено. Настройте IMAP и нажмите «Собрать сейчас».</div>'; return; }
+  container.innerHTML = emails.map(e=>cardHtml(e, withActions)).join('');
+  container.querySelectorAll('[data-expand]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const ex = btn.closest('.card').querySelector('.expand');
+      ex.classList.toggle('open');
+    });
+  });
+  bindCardActions(container);
+}
+
+function cardHtml(e, withActions){
+  const color = CTYPE_COLORS[e.competitor_type]||CTYPE_COLORS.unknown;
+  const imp = e.importance_score||0;
+  const tags = (e.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+  const crit = e.threat_level==='critical' ? ' is-critical':'';
+  return `
+  <div class="card${crit}" data-id="${e.id}">
+    <div class="avatar" style="background:${color}">${esc(initials(e.sender))}</div>
+    <div class="card-body">
+      <div class="card-top">
+        <p class="card-subject">${esc(e.subject||'(без темы)')}</p>
+        <span class="badge-pill ctype-${e.competitor_type||'unknown'}">${CTYPE_LABEL[e.competitor_type]||'Неизвестно'}</span>
+        <span class="badge-pill cat">${esc(catLabel(e.category))}</span>
+        ${threatBadgeHtml(e.threat_level)}
+      </div>
+      <p class="card-summary">${esc(e.summary_ru||'Письмо ещё не проанализировано.')}</p>
+      <div class="card-meta">
+        <span>${esc(e.sender||'')}</span>
+        <span>·</span>
+        <span>${fmtDate(e.received_at)}</span>
+        <span class="imp-wrap" title="Важность ${imp}">
+          <span class="imp-bar"><span class="imp-fill" style="width:${imp}%;background:${impColor(imp)}"></span></span>
+          <span>${imp}</span>
+        </span>
+        <button class="icon-btn" data-expand>▾ Подробнее</button>
+      </div>
+      <div class="expand">
+        <div class="grid2">
+          <div class="field-block"><h4>УТП конкурента</h4><p>${esc(e.usp_detected||'—')}</p></div>
+          <div class="field-block"><h4>Структура оффера</h4><p>${esc(e.offer_structure||'—')}</p></div>
+          <div class="field-block"><h4>Тон</h4><p>${esc(e.tone||'—')} ${e.sentiment?('· '+esc(e.sentiment)):''}</p></div>
+          <div class="field-block"><h4>CTA</h4><p>${esc(e.cta_detected||'—')}</p></div>
+          <div class="field-block"><h4>Позиционирование vs нас</h4><p>${esc(e.positioning_vs_us||'—')}</p></div>
+          <div class="field-block reco"><h4>Рекомендации команде</h4><p>${esc(e.recommended_actions||'—')}</p></div>
+        </div>
+        ${e.importance_reason?`<div class="field-block" style="margin-top:12px"><h4>Почему важно (${imp})</h4><p>${esc(e.importance_reason)}</p></div>`:''}
+        ${tags?`<div class="tags">${tags}</div>`:''}
+        <details class="orig"><summary>Оригинал письма</summary><div class="orig-body">${esc(e.body_text||e.body_html||'(пусто)')}</div></details>
+        <div class="btn-row" style="margin-top:12px">
+          <button class="btn ghost small" data-act="reanalyze" data-id="${e.id}">↻ Переанализировать</button>
+          ${withActions?`<button class="btn ghost small" data-act="archive" data-id="${e.id}">🗄 Архивировать</button>`:''}
+          ${(['high','critical'].includes(e.threat_level) && !e.threat_reviewed)?`<button class="btn small" data-act="reviewed" data-id="${e.id}">✓ Отметить как просмотренное</button>`:''}
+        </div>
+      </div>
+    </div>
+    ${withActions?`<div class="card-actions">
+      <button class="icon-btn ${e.starred?'active':''}" data-act="star" data-id="${e.id}" title="В избранное">${e.starred?'★':'☆'}</button>
+      <button class="icon-btn" data-act="archive" data-id="${e.id}" title="Архив">🗄</button>
+    </div>`:''}
+  </div>`;
+}
+
+function bindCardActions(container){
+  container.querySelectorAll('[data-act]').forEach(btn=>{
+    btn.addEventListener('click', async (ev)=>{
+      ev.stopPropagation();
+      const id=btn.dataset.id, act=btn.dataset.act;
+      if(act==='star'){ await fetch(`/api/emails/${id}/star`,{method:'POST'}); toast('Избранное обновлено'); loadFeed(); }
+      else if(act==='archive'){ await fetch(`/api/emails/${id}/archive`,{method:'POST'}); toast('Перемещено в архив'); refreshCurrent(); }
+      else if(act==='reviewed'){ await fetch(`/api/emails/${id}/reviewed`,{method:'POST'}); toast('Отмечено как просмотренное'); refreshCurrent(); refreshBadge(); }
+      else if(act==='reanalyze'){ btn.disabled=true; btn.textContent='Анализ…'; await fetch(`/api/emails/${id}/reanalyze`,{method:'POST'}); toast('Переанализировано'); refreshCurrent(); }
+    });
+  });
+}
+
+function refreshCurrent(){
+  const active=$('.nav-item.active').dataset.view;
+  if(active==='feed') loadFeed();
+  else if(active==='threats') loadThreats();
+  else if(active==='analytics') loadAnalytics();
+}
+
+$('#applyFilters').addEventListener('click', loadFeed);
+$('#f-search').addEventListener('keydown', e=>{ if(e.key==='Enter') loadFeed(); });
+$('#resetFilters').addEventListener('click', ()=>{
+  ['f-category','f-ctype','f-threat','f-importance','f-from','f-to','f-search'].forEach(id=>$('#'+id).value='');
+  loadFeed();
+});
+$('#exportCsv').addEventListener('click', ()=>{
+  const f={...buildFilters()}; delete f.archived;
+  window.open('/api/export/csv?'+qs(f), '_blank');
+});
+
+/* ---------- Threats ---------- */
+async function loadThreats(){
+  const res=await fetch('/api/emails?threat_level=high,critical&archived=false&limit=500');
+  const data=await res.json();
+  let emails=(data.emails||[]).sort((a,b)=>(b.importance_score||0)-(a.importance_score||0));
+  renderCards(emails, $('#threatCards'), false);
+}
+
+/* ---------- Badge ---------- */
+async function refreshBadge(){
+  try{
+    const res=await fetch('/api/analytics'); const d=await res.json();
+    const n=(d.kpis&&d.kpis.threats_open)||0;
+    const b=$('#threatBadge'); b.textContent=n;
+    b.classList.toggle('zero', !n);
+  }catch(e){}
+}
+
+/* ---------- Analytics ---------- */
+function destroyChart(k){ if(charts[k]){ charts[k].destroy(); delete charts[k]; } }
+Chart.defaults.color = '#8b97a6';
+Chart.defaults.borderColor = '#283039';
+Chart.defaults.font.family = "-apple-system, Segoe UI, Roboto, sans-serif";
+
+async function loadAnalytics(){
+  const res=await fetch('/api/analytics'); const d=await res.json();
+  const k=d.kpis||{};
+  $('#analyticsKpis').innerHTML=`
+    <div class="kpi"><div class="num">${k.total||0}</div><div class="lbl">Всего писем</div></div>
+    <div class="kpi"><div class="num" style="color:var(--high)">${k.threats_open||0}</div><div class="lbl">Открытые угрозы</div></div>
+    <div class="kpi"><div class="num" style="color:var(--medium)">${k.unanalyzed||0}</div><div class="lbl">Не проанализировано</div></div>`;
+
+  // Pie: categories
+  destroyChart('cat');
+  const catLabels=Object.keys(d.by_category||{});
+  charts.cat=new Chart($('#chartCategory'),{type:'doughnut',
+    data:{labels:catLabels.map(catLabel),datasets:[{data:catLabels.map(l=>d.by_category[l]),
+      backgroundColor:['#2f81f7','#17b8a6','#f0883e','#e3b341','#f85149','#a371f7','#388bfd','#6e7681','#3fb950','#db61a2']}]},
+    options:{plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}});
+
+  // Line: volume
+  destroyChart('vol');
+  const vol=d.volume_30_days||{labels:[],values:[]};
+  charts.vol=new Chart($('#chartVolume'),{type:'line',
+    data:{labels:vol.labels.map(l=>l.slice(5)),datasets:[{data:vol.values,borderColor:'#2f81f7',
+      backgroundColor:'rgba(47,129,247,.15)',fill:true,tension:.3,pointRadius:0}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+
+  // Bar horizontal: senders
+  destroyChart('snd');
+  const snd=d.top_senders||{labels:[],values:[]};
+  charts.snd=new Chart($('#chartSenders'),{type:'bar',
+    data:{labels:snd.labels,datasets:[{data:snd.values,backgroundColor:'#17b8a6'}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}}}}});
+
+  // Stacked bar: threat by week
+  destroyChart('thw');
+  const tw=d.threat_by_week||{weeks:[],series:{}};
+  const tColors={low:'#6e7681',medium:'#e3b341',high:'#f85149',critical:'#ff4d4f'};
+  charts.thw=new Chart($('#chartThreatWeek'),{type:'bar',
+    data:{labels:tw.weeks,datasets:Object.keys(tw.series||{}).map(lvl=>({
+      label:THREAT_LABEL[lvl],data:tw.series[lvl],backgroundColor:tColors[lvl]}))},
+    options:{plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+      scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}}});
+
+  // Tone bar
+  destroyChart('tone');
+  const tone=d.tone_distribution||{};
+  const toneL=Object.keys(tone);
+  charts.tone=new Chart($('#chartTone'),{type:'bar',
+    data:{labels:toneL,datasets:[{data:toneL.map(l=>tone[l]),backgroundColor:'#a371f7'}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+
+  renderHeatmap(d.usp_heatmap||{});
+  refreshBadge();
+}
+
+function renderHeatmap(hm){
+  const types=Object.keys(hm);
+  if(!types.length){ $('#uspHeatmap').innerHTML='<div class="empty">Недостаточно данных</div>'; return; }
+  const allUsp=[...new Set(types.flatMap(t=>Object.keys(hm[t])))].slice(0,12);
+  let max=1; types.forEach(t=>Object.values(hm[t]).forEach(v=>{ if(v>max) max=v; }));
+  let html='<table class="heat"><thead><tr><th>Тип \\ УТП</th>';
+  html+=allUsp.map(u=>`<th title="${esc(u)}">${esc(u.slice(0,18))}${u.length>18?'…':''}</th>`).join('');
+  html+='</tr></thead><tbody>';
+  types.forEach(t=>{
+    html+=`<tr><td class="label">${CTYPE_LABEL[t]||t}</td>`;
+    allUsp.forEach(u=>{
+      const v=hm[t][u]||0;
+      const a=v?(0.15+0.85*v/max):0;
+      html+=`<td style="background:rgba(47,129,247,${a.toFixed(2)})">${v||''}</td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  $('#uspHeatmap').innerHTML=html;
+}
+
+/* ---------- Settings ---------- */
+async function loadSettings(){
+  const res=await fetch('/api/settings'); const s=await res.json();
+  $('#s-host').value=s.imap_host||'imap.yandex.ru';
+  $('#s-port').value=s.imap_port||'993';
+  $('#s-username').value=s.imap_username||'';
+  $('#s-password').placeholder=s.imap_password_set?'•••••••• (сохранён)':'••••••••';
+  $('#s-interval').value=s.polling_interval||'30';
+  $('#s-openai').placeholder=s.openai_api_key_set?(s.openai_api_key_masked||'(сохранён)'):'sk-…';
+  $('#openaiStatus').textContent=s.openai_api_key_set?'Ключ сохранён. GPT-5.5 активен.':'Ключ не задан — используется keyword-фолбэк.';
+}
+$('#saveSettings').addEventListener('click', async ()=>{
+  const payload={
+    imap_host:$('#s-host').value, imap_port:$('#s-port').value,
+    imap_username:$('#s-username').value, polling_interval:$('#s-interval').value,
+  };
+  if($('#s-password').value.trim()) payload.imap_password=$('#s-password').value.trim();
+  if($('#s-openai').value.trim()) payload.openai_api_key=$('#s-openai').value.trim();
+  await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  $('#s-password').value=''; $('#s-openai').value='';
+  toast('Настройки сохранены'); loadSettings();
+});
+$('#testImap').addEventListener('click', async ()=>{
+  $('#imapStatus').textContent='Проверка…';
+  const payload={imap_username:$('#s-username').value};
+  if($('#s-password').value.trim()) payload.imap_password=$('#s-password').value.trim();
+  const res=await fetch('/api/settings/test-imap',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const d=await res.json();
+  $('#imapStatus').textContent=(d.ok?'✓ ':'✗ ')+d.message;
+  $('#imapStatus').style.color=d.ok?'var(--teal)':'var(--high)';
+});
+async function doCollect(){
+  toast('Сбор писем…');
+  const res=await fetch('/api/collect',{method:'POST'}); const d=await res.json();
+  const c=d.collect||{};
+  if(c.error){ toast('Ошибка: '+c.error); $('#imapStatus').textContent='✗ '+c.error; $('#imapStatus').style.color='var(--high)'; }
+  else { toast(`Получено: ${c.fetched||0}, сохранено: ${c.saved||0}, пропущено: ${c.skipped||0}`); }
+  refreshCurrent(); refreshBadge();
+}
+$('#collectNow2').addEventListener('click', doCollect);
+$('#collectBtn').addEventListener('click', doCollect);
+$('#analyzeAll').addEventListener('click', async ()=>{
+  toast('Анализ неразобранных…');
+  const res=await fetch('/api/analyze/batch',{method:'POST'}); const d=await res.json();
+  toast(`Проанализировано: ${d.analyzed||0} из ${d.total||0}`);
+  refreshCurrent(); refreshBadge();
+});
+
+/* ---------- Init ---------- */
+async function loadCategories(){
+  try{
+    const res=await fetch('/api/analytics'); const d=await res.json();
+    const cats=Object.keys(d.by_category||{});
+    const sel=$('#f-category');
+    cats.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=catLabel(c); sel.appendChild(o); });
+  }catch(e){}
+}
+loadFeed();
+loadCategories();
+refreshBadge();
+</script>
+</body>
+</html>
